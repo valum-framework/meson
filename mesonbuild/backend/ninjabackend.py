@@ -916,11 +916,25 @@ int dummy;
                 args += ['--pkg', d.name]
         extra_args = []
 
-        for a in target.extra_args.get('vala', []):
+        extra_vala_args = iter(target.extra_args.get('vala', []))
+        for a in extra_vala_args:
             if isinstance(a, File):
                 relname = a.rel_to_builddir(self.build_to_src)
                 extra_dep_files.append(relname)
                 extra_args.append(relname)
+            elif a.startswith('--gir='):
+                base_gir = a[6:]
+                outputs.append(os.path.normpath(os.path.join(self.get_target_dir(target), base_gir)))
+                extra_args.append('--gir=' + os.path.join('..', base_gir))
+            elif a == '--gir':
+                try:
+                    base_gir = next(extra_vala_args) # skip the next argument
+                    outputs.append(os.path.normpath(os.path.join(self.get_target_dir(target), base_gir)))
+                except StopIteration:
+                    break # will yield a compiler error
+                finally:
+                    extra_args.append('--gir')
+                extra_args.append(os.path.join('..', base_gir))
             else:
                 extra_args.append(a)
         dependency_vapis = self.determine_dep_vapis(target)
