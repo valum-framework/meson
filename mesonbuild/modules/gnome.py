@@ -283,10 +283,15 @@ class GnomeModule:
         return cflags, ldflags, gi_includes
 
     def generate_gir(self, state, args, kwargs):
+        mlog.warning('generate_gir() is deprecated, use scan_gir() and compile_typelib() instead')
         if len(args) != 1:
             raise MesonException('Gir takes one argument')
         if kwargs.get('install_dir'):
             raise MesonException('install_dir is not supported with generate_gir(), see "install_dir_gir" and "install_dir_typelib"')
+        # split kwargs
+        return scan_gir(), compile_typelib()
+
+    def scan_gir(self, state, args, kwargs):
         girtarget = args[0]
         while hasattr(girtarget, 'held_object'):
             girtarget = girtarget.held_object
@@ -420,6 +425,7 @@ class GnomeModule:
                 os.path.join(state.environment.get_datadir(), 'gir-1.0'))
         scan_target = GirTarget(girfile, state.subdir, scankwargs)
 
+    def compile_typelib(self, state, args, kwargs):
         typelib_output = '%s-%s.typelib' % (ns, nsversion)
         typelib_cmd = ['g-ir-compiler', scan_target, '--output', '@OUTPUT@']
         typelib_cmd += self._get_include_args(state, gir_inc_dirs,
